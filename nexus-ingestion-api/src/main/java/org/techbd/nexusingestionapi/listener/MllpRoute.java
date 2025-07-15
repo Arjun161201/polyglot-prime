@@ -1,63 +1,75 @@
 package org.techbd.nexusingestionapi.listener;
 
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.apache.camel.Processor;
 
+import ca.uhn.hl7v2.parser.PipeParser;
+import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.Message;
 @Component
 public class MllpRoute extends RouteBuilder {
-
+    
+    @Value("${hl7.mllp.ports}")   
+    private String[] ports;
+   
     @Override
     public void configure() throws Exception {
-        
-        from("mllp:0.0.0.0:2575")
-            .routeId("hl7-mllp-listener")
-            .log("Received HL7 Message:\n${body}")
-            .process(exchange -> {
-                String hl7Message = exchange.getIn().getBody(String.class);
-                
-                // You can reuse your existing buildAck logic here
-                String ack = buildAck(hl7Message);
-
-                exchange.getMessage().setBody(ack);  // ACK will be framed and sent automatically
-            }).log("ACK generated and sent.");
-;
-
+        if (ports == null || ports.length == 0) {
+        log.warn("No ports configured in HL7_MLLP_PORT. No MLLP listener started.");
+        return;
     }
-
-  private String buildAck(String receivedMessage) {
-    try {
-        String[] segments = receivedMessage.split("\r");
-
-        if (segments.length == 0 || !segments[0].startsWith("MSH")) {
-            throw new IllegalArgumentException("Invalid HL7 message: Missing MSH segment.");
+    for (String portStr : ports) {
+        try {
+            int port = Integer.parseInt(portStr.trim());
+            createMllpRoute(port);
+        } catch (NumberFormatException ex) {
+            log.error("Invalid port number in HL7_MLLP_PORT: " + portStr, ex);
         }
-
-        String[] fields = segments[0].split("\\|");
-
-        String sendingApp = (fields.length > 2) ? fields[2] : "UnknownApp";
-        String sendingFac = (fields.length > 3) ? fields[3] : "UnknownFac";
-        String receivingApp = (fields.length > 4) ? fields[4] : "ReceiverApp";
-        String receivingFac = (fields.length > 5) ? fields[5] : "ReceiverFac";
-        String controlId = (fields.length > 9) ? fields[9] : String.valueOf(System.currentTimeMillis());
-
-        String ack =
-                "MSH|^~\\&|" + receivingApp + "|" + receivingFac + "|" + sendingApp + "|" + sendingFac +
-                "|" + getCurrentTimestamp() + "||ACK^R01|" + controlId + "|P|2.3\r" +
-                "MSA|AA|" + controlId + "\r";
-
-        log.info("Generated ACK:\n{}", ack);
-        return ack;
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        return "MSH|^~\\&|ReceiverApp|ReceiverFac|SenderApp|SenderFac|" + getCurrentTimestamp() + "||ACK^R01|FallbackCtrlID|P|2.3\r" +
-               "MSA|AA|FallbackCtrlID\r";
     }
-}
-
-
-    private String getCurrentTimestamp() {
-        return java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-                .format(java.time.LocalDateTime.now());
     }
+     private void createMllpRoute(int port) {
+        from("mllp://0.0.0.0:" + port)
+            .routeId("hl7-mllp-listener-" + port)
+            .log("[PORT " + port + "] Received HL7 Message:\n${body}")
+            .process(new Processor() {
+                @Override
+                public void process(Exchange exchange) throws Exception {
+                    String hl7Message = exchange.getIn().getBody(String.class);
+                    PipeParser parser = new PipeParser();
+
+                    try {
+                        // Parse incoming HL7 message
+                        Message hapiMsg = parser.parse(hl7Message);
+
+                        // Generate standard ACK (MSA|AA)
+                        Message ack = hapiMsg.generateACK();
+                        String ackString = parser.encode(ack);
+
+                        // Set ACK response
+                        exchange.getMessage().setBody(ackString);
+                        exchange.setProperty("ackType", "AA");
+
+                    } catch (Exception e) {
+                        log.error("[PORT " + port + "] Error while parsing or generating ACK", e);
+
+                        String nackString;
+                        try {
+                            Message partialMsg = parser.parse(hl7Message);
+                            @SuppressWarnings("deprecation")
+                            Message nack = partialMsg.generateACK("AE", new HL7Exception(e.getMessage()));
+                            nackString = parser.encode(nack);
+                        } catch (Exception innerEx) {
+                            nackString = "MSH|^~\\&|||||||ACK^O01|1|P|2.3\rMSA|AE|1\r";
+                        }
+
+                        exchange.getMessage().setBody(nackString);
+                        exchange.setProperty("ackType", "AE");
+                    }
+                }
+            })
+            .log("[PORT " + port + "] HL7 ACK/NAK message sent.");
+     }
 }
