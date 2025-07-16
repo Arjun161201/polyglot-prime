@@ -48,11 +48,11 @@
 		</dependency>
 
 
-<dependency>
-    <groupId>com.amazonaws</groupId>
-    <artifactId>aws-lambda-java-core</artifactId>
-    <version>1.2.2</version>
-</dependency>
+        <dependency>
+           <groupId>com.amazonaws</groupId>
+           <artifactId>aws-lambda-java-core</artifactId>
+           <version>1.2.2</version>
+        </dependency>
 
              <!-- AWS SDK Dependencies -->
         <dependency>
@@ -83,29 +83,37 @@
             <version>2.10.1</version>
         </dependency>
         <dependency>
-    <groupId>io.awspring.cloud</groupId>
-    <artifactId>spring-cloud-starter-aws</artifactId>
-    <version>2.4.4</version> <!-- Check for latest version -->
-</dependency>
-<dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-starter-aws</artifactId>
+            <version>2.4.4</version> <!-- Check for latest version -->
+        </dependency>
+
+        <dependency>
    			<groupId>org.apache.camel.springboot</groupId>
   			<artifactId>camel-spring-boot-starter</artifactId>
  			<version>4.10.0</version>  <!-- Match Camel version as per project needs -->
 		</dependency>
+
 		<dependency>
   		 	<groupId>org.apache.camel.springboot</groupId>
  			<artifactId>camel-mllp-starter</artifactId>
     		<version>4.10.0</version>
-	</dependency>
-	<dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <scope>provided</scope>
-    </dependency>
-<dependency>
-  <groupId>ca.uhn.hapi</groupId>
-  <artifactId>hapi-base</artifactId>
-  <version>2.3</version>
+	    </dependency>
+
+	    <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>ca.uhn.hapi</groupId>
+            <artifactId>hapi-base</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+        <dependency>
+             <groupId>ca.uhn.hapi</groupId>
+             <artifactId>hapi-structures-v23</artifactId>
+             <version>2.6.0</version>
 </dependency>
 
 	</dependencies>
