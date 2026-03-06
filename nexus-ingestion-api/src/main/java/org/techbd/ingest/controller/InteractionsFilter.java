@@ -180,7 +180,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         String route = portEntry.route;
                        if (route != null && !route.isBlank() && !ALLOWED_ROUTES_LIST.isEmpty() && ALLOWED_ROUTES_LIST.contains(route)) {
                             origRequest.setAttribute(Constants.ALLOWED_ROUTES, true);
-                            LOG.info("InteractionsFilter: route {} is NOT in allowed routes list, setting ALLOWED_ROUTES attribute to true", route);
+                            LOG.info("InteractionsFilter: route {} is NOT in allowed routes list, setting ALLOWED_ROUTES attribute to true ", route);
                           }
                     // 3) If this port config requires mtls via mtls field, client must supply
                 // header
