@@ -116,6 +116,27 @@ public class SecurityConfig {
                     hsts -> hsts
                             .includeSubDomains(true)
                             .maxAgeInSeconds(Constant.HSTS_MAX_AGE)); // Enable HSTS
+
+            headers.contentSecurityPolicy(csp -> csp
+                .policyDirectives(
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " +
+                    "style-src 'self' 'unsafe-inline' https:; " +
+                    "img-src 'self' data: https:; " +
+                    "font-src 'self' data: https:; " +
+                    "connect-src 'self' https:; " +
+                    "frame-src 'self' https:; " +
+                    "form-action 'self' https:; " +
+                    "frame-ancestors 'self';"
+                )
+            );
+
+            headers.referrerPolicy(referrer -> referrer
+                    .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)); // Referrer Policy
+
+                                                                                                                                                         
+            headers.permissionsPolicy(permissions -> permissions
+                    .policy("geolocation=(), camera=(), microphone=()")); // Permissions Policy
         });
         return http.build();
     }
